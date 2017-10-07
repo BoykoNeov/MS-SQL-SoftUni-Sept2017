@@ -111,3 +111,24 @@ GROUP BY DepartmentID
 HAVING MAX(Salary) NOT BETWEEN 30000 AND 70000
 
 -- TASK 17
+SELECT COUNT(EmployeeID) AS 'Count' FROM Employees
+WHERE ISNULL(ManagerID, 1) = 1
+
+-- TASK 18
+SELECT Salaries.DepartmentID, Salaries.Salary FROM
+(
+SELECT DepartmentId,
+MAX(Salary) AS Salary,
+DENSE_RANK() OVER (PARTITION BY DepartmentId ORDER BY Salary DESC) AS Rank
+FROM Employees
+GROUP BY DepartmentID, Salary
+)AS Salaries 
+WHERE Rank=3
+
+-- TASK 19
+SELECT TOP 10 FirstName, LastName, DepartmentID FROM Employees AS emp1
+WHERE Salary >
+(SELECT AVG(Salary) FROM Employees AS emp2
+WHERE emp1.DepartmentID = emp2.DepartmentID
+GROUP BY DepartmentID)
+ORDER BY DepartmentID
