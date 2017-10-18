@@ -251,15 +251,16 @@ GO
 -- DROP PROCEDURE usp_CalculateFutureValueForAccount
 usp_CalculateFutureValueForAccount 1, 0.1
 GO
--- TASK 13
+
+-- TASK 13 -- INLINE FUNCTION
 USE DIABLO
 GO
 
- CREATE OR ALTER FUNCTION ufn_CashInUsersGames (@gameName nvarchar(50))
+-- DROP FUNCTION ufn_CashInUsersGames
+CREATE FUNCTION ufn_CashInUsersGames (@gameName nvarchar(50))
 RETURNS TABLE
 AS
 
-DECLARE @Result TABLE
 RETURN (
   WITH CTE_CashInRows (Cash, RowNumber) AS (
     SELECT ug.Cash, ROW_NUMBER() OVER (ORDER BY ug.Cash DESC)
@@ -276,3 +277,35 @@ RETURN (
 GO
 SELECT * FROM dbo.ufn_CashInUsersGames ('Lily Stargazer');
 SELECT * FROM dbo.ufn_CashInUsersGames ('Love in a mist');
+GO
+
+SELECT * FROM UsersGames JOIN
+Games ON Games.Id = UsersGames.GameId
+WHERE Games.Name = 'Ivy'
+
+GO
+
+--TASK 13 SCALAR FUNCTION - this is not working in JUDGE, but the guys there have written 'Scalar Function' ;)
+CREATE FUNCTION ufn_CashInUsersGames (@gameName nvarchar(50))
+RETURNS MONEY
+AS
+BEGIN
+DECLARE @Result DECIMAL(18,4)
+
+SET @Result = (SELECT SUM(GameRows.Cash) AS SumCash
+FROM
+(SELECT TOP 100 PERCENT Cash, ROW_NUMBER() OVER (ORDER BY Cash DESC) AS RowNumber
+FROM UsersGames
+JOIN Games ON Games.Id = UsersGames.GameId
+WHERE Games.Name = @gameName
+) AS GameRows
+WHERE GameRows.RowNumber % 2 = 1)
+
+RETURN @Result
+
+END
+
+GO
+
+-- TEST
+SELECT dbo.ufn_CashInUsersGames ('Ivy')
